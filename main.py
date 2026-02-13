@@ -2,7 +2,11 @@ import requests
 from skyfield.api import load, EarthSatellite, wgs84
 import time
 import streamlit as st
+from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
+from subprocess import Popen
 
+st.write("Loading TLE data from Celestrak...")
+ctx = get_script_run_ctx()
 headers = {'User-Agent': 'Mozilla/5.0'}
 # Update TLE data source to include both active satellites and stations     
 # 1. All active sats
@@ -46,3 +50,5 @@ for name, sat in satellites[:5]:
         print(f"{name:30}  {subpoint.latitude.degrees:7.3f}°  {subpoint.longitude.degrees:8.3f}°  {subpoint.elevation.km:6.1f} km")
     except Exception as e:
         print(f"Error calculating position for {name}: {e}")
+process = Popen(['python', 'my_script.py'])
+add_script_run_ctx(process, ctx)

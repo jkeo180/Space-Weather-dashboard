@@ -1,9 +1,35 @@
-from skyfield.api import load, EarthSatellite, wgs84
 import streamlit as st
+from skyfield.api import load, EarthSatellite, wgs84
 import requests
 from io import StringIO
 import pandas as pd
 import time
+import folium
+from streamlit_folium import st_folium
+import threading
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+from plotly import graph_objs as go # For potential future use
+st.title("Interactive Folium Map")
+
+latitude = 37.7749
+longitude = -122.4194
+zoom_level = 12
+m = folium.Map(location=[latitude, longitude], zoom_start=zoom_level, tiles='OpenStreetMap') # Use other tiles for satellite view
+
+map_data = st_folium(m, use_container_width=True, height=400)
+folium.TileLayer('http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}', name='Google Satellite', attr='Google').add_to(m)
+folium.LayerControl().add_to(m) 
+
+# Add layer control for users to switch layers
+# Render the map and capture user interactions in real-time
+map_data = st_folium(m, width=700, height=500)
+
+# You can access data like the last clicked location or current bounds
+if map_data:
+    st.write("Last clicked location:", map_data.get("last_clicked"))
+ 
+def my_function_in_thread():
+    st.write(map_data)
 
 st.title("Live Satellite Tracker — Active Satellites")
 
@@ -23,7 +49,7 @@ def load_satellites(ttl=3600, show_spinner="Downloading TLE data..."):
                 line2 = lines[i+2].strip()
                 
                 try: 
-                    ts = load.timescale() # it's already a thing in Skyfield 
+                    ts = load.timescale()  
                     sat = EarthSatellite(line1, line2, name, ts)
                     satellites.append((name, sat))
                     if len(satellites) >= 10:  # limit to 10 for speed
@@ -48,17 +74,21 @@ while True:
             "lon": round(subpoint.longitude.degrees, 4),
             "alt_km": round(subpoint.elevation.km)
         })
-    time.sleep(10) # throttle
-    df = pd.DataFrame(data) 
-    if len(df) == 0: 
-        st.warning("No satellites loaded — check URL") 
-        time.sleep(5)
-        continue
+    
     df = pd.DataFrame(data)
-    
+    df_display = df.copy()
+    df_display["size"] = 100  # Set a fixed size for all markers
+
     with placeholder.container():
-        st.map(df, latitude="lat", longitude="lon", size=100, color="#ff0000")
+        st.map(df_display, latitude="lat", longitude="lon", size=100, color="#ff0000")
         st.dataframe(df)
-    
+    thread = threading.Thread(target=my_function_in_thread)
+    add_script_run_ctx(thread) # Add the context to the thread
+    thread.start()
     status.write(f"Last update: {now.utc_strftime('%H:%M:%S UTC')} — refreshing in 10s")
     time.sleep(10)
+    try:
+        pass
+    except KeyboardInterrupt:
+        print("Exiting live tracker.")
+        break
