@@ -1,7 +1,5 @@
-streamlit
-skyfield.api
-pandas
-time
-folium
-streamlit_folium
-plotly
+streamlit==1.31.1
+requests==2.31.0
+pandas==2.2.1
+matplotlib==3.8.3
+skyfield==1.62
