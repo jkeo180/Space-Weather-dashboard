@@ -1,7 +1,7 @@
-pip streamlit
-pip skyfield.api
-pip pandas
-pip time
-pip folium
-pip streamlit_folium
-pip plotly
+streamlit
+skyfield.api
+pandas
+time
+folium
+streamlit_folium
+plotly
